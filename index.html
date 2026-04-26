@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>我的世界 · 协同仓库管家</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            font-family: 'Segoe UI', '微软雅黑', system-ui, sans-serif;
+        }
+        body {
+            background: #f5f7fb;
+            padding: 20px;
+            color: #1e2b3c;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        h1 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-left: 8px solid #3b82f6;
+            padding-left: 20px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        h1 small {
+            font-size: 1rem;
+            font-weight: normal;
+            color: #5f7a92;
+            margin-left: 12px;
+        }
+        h2 {
+            font-size: 1.5rem;
+            margin: 20px 0 12px;
+            color: #2c3e50;
+            border-bottom: 2px solid #d0ddee;
+            padding-bottom: 6px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            padding: 20px 24px;
+            margin-bottom: 30px;
+            border: 1px solid #e9eef4;
+            transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+        .card.drag-over {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.15);
+        }
+        .flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+        }
+        .search-box {
+            flex: 2;
+            min-width: 260px;
+            display: flex;
+            gap: 8px;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 40px;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.2s;
+            background: white;
+            color: #1e293b;
+        }
+        .search-box input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+        .btn {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #1e293b;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .btn-primary {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 8px rgba(59,130,246,0.2);
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        .btn-outline-blue {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        .btn-outline-blue:hover {
+            background: #eef2ff;
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 0.9rem;
+        }
+        .btn-link {
+            background: #eef2ff;
+            border-color: #a0c4ff;
+            color: #2563eb;
+        }
+        .result-badge {
+            background: #e6edf8;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 1rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1.05rem;
+            margin-top: 12px;
+        }
+        th {
+            background: #f1f5f9;
+            font-weight: 600;
+            padding: 14px 8px;
+            border: 1px solid #dce3ec;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        td {
+            border: 1px solid #dce3ec;
+            padding: 10px 8px;
+            vertical-align: middle;
+            font-size: 1.05rem;
+        }
+        .search-results-table td {
+            text-align: center;
+        }
+        .plan-table td {
+            text-align: center;
+        }
+        .plan-table th {
+            background: #334155;
+            color: white;
+            font-size: 1.1rem;
+        }
+        .editable-cell {
+            background: #fefce8;
+            cursor: pointer;
+            transition: background 0.1s;
+            text-align: center;
+        }
+        .editable-cell:hover {
+            background: #fde68a;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            margin-top: 10px;
+        }
+        .textarea-paste {
+            width: 100%;
+            padding: 16px;
+            border-radius: 20px;
+            border: 1px solid #cbd5e1;
+            font-family: monospace;
+            font-size: 1rem;
+            background: #fafcff;
+            resize: vertical;
+            color: #1e293b;
+        }
+        .footer-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .toast-msg {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 60px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast-msg.show {
+            opacity: 1;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+        }
+        .mt-4 { margin-top: 16px; }
+        .text-center { text-align: center; }
+        .hint-text {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+            padding: 8px 0;
+            color: #475569;
+            font-size: 0.95rem;
+        }
+
+        /* ========== 深色模式样式 ========== */
+        body.dark {
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        body.dark h1 {
+            color: #f1f5f9;
+            border-left-color: #60a5fa;
+        }
+        body.dark h1 small {
+            color: #94a3b8;
+        }
+        body.dark h2 {
+            color: #e2e8f0;
+            border-bottom-color: #334155;
+        }
+        body.dark .card {
+            background: #1e293b;
+            border-color: #334155;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        body.dark .card.drag-over {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 4px rgba(96,165,250,0.2);
+        }
+        body.dark .search-box input {
+            background: #0f172a;
+            border-color: #475569;
+            color: #f1f5f9;
+        }
+        body.dark .search-box input:focus {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
+        }
+        body.dark .btn {
+            background: #1e293b;
+            border-color: #475569;
+            color: #e2e8f0;
+        }
+        body.dark .btn-primary {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+        body.dark .btn-outline-blue {
+            border-color: #60a5fa;
+            color: #93c5fd;
+        }
+        body.dark .btn-outline-blue:hover {
+            background: #1e3a5f;
+        }
+        body.dark .btn-link {
+            background: #1e3a5f;
+            border-color: #3b82f6;
+            color: #bfdbfe;
+        }
+        body.dark .result-badge {
+            background: #1e293b;
+            color: #cbd5e1;
+        }
+        body.dark th {
+            background: #1e293b;
+            border-color: #334155;
+            color: #f1f5f9;
+        }
+        body.dark td {
+            border-color: #334155;
+        }
+        body.dark .plan-table th {
+            background: #0f172a;
+        }
+        body.dark .editable-cell {
+            background: #2d3a4e;
+        }
+        body.dark .editable-cell:hover {
+            background: #3b4b62;
+        }
+        body.dark .table-wrapper {
+            background: #1e293b;
+            border-color: #334155;
+        }
+        body.dark .textarea-paste {
+            background: #0f172a;
+            border-color: #475569;
+            color: #e2e8f0;
+        }
+        body.dark .toast-msg {
+            background: #0f172a;
+            color: #f8fafc;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        body.dark .hint-text {
+            color: #94a3b8;
+        }
+        body.dark input, body.dark button {
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+        /* 深色模式表格表头 (search results) */
+        body.dark .search-results-table th {
+            background: #1e293b;
+        }
+        /* 深色模式编辑输入框 */
+        body.dark .editable-cell input {
+            background: #0f172a;
+            color: #f8fafc;
+            border-color: #60a5fa !important;
+        }
+    </style>
+    <!-- Vue 3 & xlsx-js-style -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+</head>
+<body>
+    <div id="app" class="container">
+        <div class="toast-msg" :class="{ show: toast.visible }">{{ toast.message }}</div>
+
+        <h1>
+            <span style="display: flex; align-items: center; gap: 10px;">
+                🧱 全物品仓库总系统
+                <small>协同仓库管家</small>
+            </span>
+            <!-- 右上角深色模式切换按钮 -->
+            <div style="margin-left: auto;">
+                <button class="btn btn-sm" @click="toggleDarkMode" :title="darkMode ? '切换到浅色模式' : '切换到深色模式'" style="font-size: 1.2rem; padding: 6px 14px;">
+                    {{ darkMode ? '☀️ 浅色' : '🌙 深色' }}
+                </button>
+            </div>
+        </h1>
+
+        <!-- 卡片1：快速查询 -->
+        <div class="card">
+            <h2>🔎 物品速查</h2>
+            <div class="flex-row">
+                <div class="search-box">
+                    <input type="text" v-model="searchQuery" @keyup.enter="performSearch" placeholder="输入物品名，如 橡木、活塞...">
+                    <button class="btn btn-primary" @click="performSearch">查询</button>
+                    <button class="btn btn-outline-blue" @click="clearSearch">清空</button>
+                </div>
+                <span class="result-badge" v-if="searchResults.length > 0">找到 {{ searchResults.length }} 个位置</span>
+            </div>
+            <div v-if="searchResults.length > 0" style="margin-top: 18px;">
+                <table class="search-results-table">
+                    <thead><tr><th>物品</th><th>编号</th><th>位置</th></tr></thead>
+                    <tbody>
+                        <tr v-for="(item, idx) in searchResults" :key="idx">
+                            <td><strong>{{ item.item_name }}</strong></td>
+                            <td>
+                                <span v-for="(pos, pIdx) in item.positions" :key="pIdx">
+                                    {{ pos.number }}<span v-if="pIdx < item.positions.length-1">；</span>
+                                </span>
+                                <span v-if="item.positions.length === 0" style="color: #a0aec0;">—</span>
+                            </td>
+                            <td>
+                                <span v-for="(pos, pIdx) in item.positions" :key="pIdx">
+                                    {{ pos.region }}<span v-if="pIdx < item.positions.length-1">；</span>
+                                </span>
+                                <span v-if="item.positions.length === 0" style="color: #a0aec0;">未收录</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div v-else-if="searchPerformed" style="margin-top: 12px; color: #7c8b9c; font-size: 1.1rem;">未找到包含“{{ lastQuery }}”的物品</div>
+        </div>
+
+        <!-- 卡片2：材料计划 -->
+        <div class="card">
+            <h2>📋 材料计划生成器</h2>
+            <p style="margin-bottom: 10px; color: #475569; font-size: 1rem;">粘贴原理图材料表格，自动计算盒组个并关联位置，16堆叠物品（末影珍珠、白色旗帜等）、不可堆叠物品（水桶、附魔书）的盒组个仅供参考。</p>
+            <textarea class="textarea-paste" v-model="pasteInput" rows="6" placeholder="粘贴示例：
++----------+--------+---------+-----------+
+| 原理图'Unnamed'材料列表（1/1区域）                 |
++----------+--------+---------+-----------+
+| Item     |  Total | Missing | Available |
++----------+--------+---------+-----------+
+| 玻璃       | 227136 |  227136 |         1 |
+| 雪块       | 139615 |  139615 |         1 |
+| 棕色混凝土    |      1 |       1 |         0 |
+| 金合欢木板    |      1 |       1 |         0 |
++----------+--------+---------+-----------+
+| Item     |  Total | Missing | Available |
++----------+--------+---------+-----------+
+"></textarea>
+            <div class="footer-actions">
+                <button class="btn btn-outline-blue" @click="pasteExample">填入示例</button>
+                <button class="btn btn-outline-blue" @click="clearPlan">🧹 清空</button>
+                <button class="btn btn-primary" @click="generatePlan" :disabled="planLoading">
+                    {{ planLoading ? '解析中...' : '生成材料清单' }}
+                </button>
+                <button class="btn" @click="downloadPlanExcel" :disabled="!planData.length">⬇ 下载 Excel 清单</button>
+            </div>
+            <div v-if="planData.length" class="table-wrapper mt-4">
+                <table class="plan-table">
+                    <thead><tr><th>物品名称</th><th>数量(盒组个)</th><th>数量(个)</th><th>编号</th><th>位置</th></tr></thead>
+                    <tbody>
+                        <tr v-for="(row, i) in planData" :key="i">
+                            <td>{{ row.item }}</td>
+                            <td class="mono">{{ row.boxed }}</td>
+                            <td class="mono">{{ row.missing }}</td>
+                            <td>{{ row.numbers || '—' }}</td>
+                            <td>{{ row.regions || '未在对照表中找到' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 卡片3：全物品对照表 (支持拖拽上传) -->
+        <div class="card" 
+             @dragover.prevent="handleDragOver" 
+             @dragleave.prevent="handleDragLeave" 
+             @drop.prevent="handleDrop"
+             :class="{ 'drag-over': isDragOver }">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <h2 style="margin-bottom: 0;">📌 全物品位置对照表</h2>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-sm btn-outline-blue" @click="clearAllMappings">🧹 清空表格</button>
+                    <button class="btn btn-sm btn-outline-blue" @click="triggerImport">📂 导入 Excel</button>
+                    <input type="file" ref="fileInput" accept=".xlsx, .xls" style="display:none" @change="handleImportExcel">
+                    <button class="btn btn-sm btn-outline-blue" @click="exportMappingsExcel">📤 导出当前表</button>
+                    <button class="btn btn-sm btn-primary" @click="addNewRow">➕ 新增行 (智能补号)</button>
+                </div>
+            </div>
+            <div class="hint-text">
+                <span>📌 Excel数据参考网站：</span>
+                <button class="btn btn-sm btn-link" @click="openReferenceSite">🔗 快速跳转</button>
+                <span style="margin-left: auto; font-size:1.7rem; color:#6b7280;">支持拖拽Excel文件至此区域上传</span>
+            </div>
+            <p style="margin: 8px 0 4px; font-size:0.95rem;">点击单元格编辑，失焦/回车保存。</p>
+            <div class="table-wrapper" v-if="!loading.table && groupedMappings.length">
+                <table style="min-width: 2200px;">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">编号</th>
+                            <th colspan="5">左侧单片 · 左部</th>
+                            <th colspan="5">左侧单片 · 右部</th>
+                            <th colspan="5">右侧单片 · 左部</th>
+                            <th colspan="5">右侧单片 · 右部</th>
+                            <th colspan="2">大宗</th>
+                            <th colspan="6">mis</th>
+                            <th rowspan="2">操作</th>
+                        </tr>
+                        <tr>
+                            <th>左底</th><th>左下</th><th>左中</th><th>左上</th><th>左顶</th>
+                            <th>右底</th><th>右下</th><th>右中</th><th>右上</th><th>右顶</th>
+                            <th>左底</th><th>左下</th><th>左中</th><th>左上</th><th>左顶</th>
+                            <th>右底</th><th>右下</th><th>右中</th><th>右上</th><th>右顶</th>
+                            <th>左侧</th><th>右侧</th>
+                            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="row in groupedMappings" :key="row.row_num">
+                            <td class="text-center"><strong>{{ row.row_num }}</strong></td>
+                            <td v-for="col in columnOrder" :key="col.key" 
+                                class="editable-cell" 
+                                @click="startEdit(row.row_num, col.region, col.colKey, $event)">
+                                <span v-if="editingCell && editingCell.row === row.row_num && editingCell.region === col.region && editingCell.colKey === col.colKey">
+                                    <input type="text" 
+                                           :ref="setEditRef"
+                                           v-model="editingCell.value" 
+                                           @blur="saveEdit(row.row_num, col.region, col.colKey)"
+                                           @keyup.enter="saveEdit(row.row_num, col.region, col.colKey)"
+                                           @keyup.esc="cancelEdit"
+                                           style="width: 100%; border: 2px solid #3b82f6; border-radius: 6px; padding: 4px;">
+                                </span>
+                                <span v-else>{{ getCellValue(row.row_num, col.region, col.colKey) || '—' }}</span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm" style="padding:2px 10px;" @click="deleteRow(row.row_num)">🗑️</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div v-else-if="loading.table" class="text-center" style="padding:30px; font-size:1.1rem;">加载对照表中...</div>
+            <div v-else class="text-center" style="padding:30px; color: #64748b; font-size:1.1rem;">暂无数据，请点击「新增行」或「导入Excel」开始</div>
+        </div>
+    </div>
+
+    <script>
+        const { ref, reactive, computed, onMounted, nextTick } = Vue;
+
+        // 列顺序
+        const COLUMN_ORDER = [
+            { region: '左侧单片', colKey: '左底' }, { region: '左侧单片', colKey: '左下' }, { region: '左侧单片', colKey: '左中' }, { region: '左侧单片', colKey: '左上' }, { region: '左侧单片', colKey: '左顶' },
+            { region: '左侧单片', colKey: '右底' }, { region: '左侧单片', colKey: '右下' }, { region: '左侧单片', colKey: '右中' }, { region: '左侧单片', colKey: '右上' }, { region: '左侧单片', colKey: '右顶' },
+            { region: '右侧单片', colKey: '左底' }, { region: '右侧单片', colKey: '左下' }, { region: '右侧单片', colKey: '左中' }, { region: '右侧单片', colKey: '左上' }, { region: '右侧单片', colKey: '左顶' },
+            { region: '右侧单片', colKey: '右底' }, { region: '右侧单片', colKey: '右下' }, { region: '右侧单片', colKey: '右中' }, { region: '右侧单片', colKey: '右上' }, { region: '右侧单片', colKey: '右顶' },
+            { region: '大宗', colKey: '左侧' }, { region: '大宗', colKey: '右侧' },
+            { region: 'mis', colKey: '1' }, { region: 'mis', colKey: '2' }, { region: 'mis', colKey: '3' }, { region: 'mis', colKey: '4' }, { region: 'mis', colKey: '5' }, { region: 'mis', colKey: '6' }
+        ];
+
+        const app = Vue.createApp({
+            setup() {
+                const toast = reactive({ visible: false, message: '', timer: null });
+                const showToast = (msg, duration = 2500) => {
+                    if (toast.timer) clearTimeout(toast.timer);
+                    toast.message = msg;
+                    toast.visible = true;
+                    toast.timer = setTimeout(() => { toast.visible = false; }, duration);
+                };
+
+                // ---------- 深色模式 ----------
+                const DARK_MODE_KEY = 'mc_warehouse_dark_mode';
+                const darkMode = ref(false);
+                
+                function applyDarkMode(enable) {
+                    if (enable) {
+                        document.body.classList.add('dark');
+                    } else {
+                        document.body.classList.remove('dark');
+                    }
+                }
+                
+                function toggleDarkMode() {
+                    darkMode.value = !darkMode.value;
+                    applyDarkMode(darkMode.value);
+                    localStorage.setItem(DARK_MODE_KEY, darkMode.value ? '1' : '0');
+                    showToast(darkMode.value ? '🌙 深色模式' : '☀️ 浅色模式', 1200);
+                }
+                
+                // 初始化深色模式 (从localStorage读取)
+                function initDarkMode() {
+                    const saved = localStorage.getItem(DARK_MODE_KEY);
+                    if (saved === '1') {
+                        darkMode.value = true;
+                        applyDarkMode(true);
+                    } else if (saved === '0') {
+                        darkMode.value = false;
+                        applyDarkMode(false);
+                    } else {
+                        // 无记录时默认跟随系统？这里默认浅色
+                        darkMode.value = false;
+                        applyDarkMode(false);
+                    }
+                }
+
+                const searchQuery = ref('');
+                const searchResults = ref([]);
+                const searchPerformed = ref(false);
+                const lastQuery = ref('');
+
+                const mappings = ref([]);
+                const loading = reactive({ table: false });
+                const fileInput = ref(null);
+                
+                const STORAGE_KEY = 'mc_item_mappings_v12';
+                
+                const isDragOver = ref(false);
+
+                function loadMappingsFromStorage() {
+                    const stored = localStorage.getItem(STORAGE_KEY);
+                    if (stored) {
+                        try { mappings.value = JSON.parse(stored); } catch { mappings.value = []; }
+                    } else {
+                        mappings.value = [];
+                    }
+                }
+                function saveToStorage() {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(mappings.value));
+                }
+
+                const groupedMappings = computed(() => {
+                    const map = new Map();
+                    mappings.value.forEach(m => {
+                        if (!map.has(m.row_num)) map.set(m.row_num, { row_num: m.row_num, cells: {} });
+                        const row = map.get(m.row_num);
+                        row.cells[`${m.region}|${m.col_key}`] = m.item_name;
+                    });
+                    return Array.from(map.values()).sort((a,b) => a.row_num - b.row_num);
+                });
+
+                const editingCell = ref(null);
+                let editInputRef = null;
+                const setEditRef = el => { if (el) editInputRef = el; };
+
+                function getCellValue(rowNum, region, colKey) {
+                    const row = groupedMappings.value.find(r => r.row_num === rowNum);
+                    return row?.cells[`${region}|${colKey}`] || '';
+                }
+
+                function updateCell(rowNum, region, colKey, itemName) {
+                    const idx = mappings.value.findIndex(m => m.row_num === rowNum && m.region === region && m.col_key === colKey);
+                    if (idx >= 0) mappings.value[idx].item_name = itemName;
+                    else mappings.value.push({ row_num: rowNum, region, col_key: colKey, item_name: itemName });
+                    saveToStorage();
+                    showToast('已保存');
+                }
+
+                function deleteRow(rowNum) {
+                    if (!confirm(`确定删除编号 ${rowNum} 的所有映射吗？`)) return;
+                    mappings.value = mappings.value.filter(m => m.row_num !== rowNum);
+                    saveToStorage();
+                    showToast(`已删除编号 ${rowNum}`);
+                }
+
+                function addNewRow() {
+                    const existingNums = [...new Set(mappings.value.map(m => m.row_num))].sort((a,b)=>a-b);
+                    let newNum = 1;
+                    if (existingNums.length > 0) {
+                        let missing = null;
+                        for (let i = 0; i < existingNums.length; i++) {
+                            if (existingNums[i] !== i+1) {
+                                missing = i+1;
+                                break;
+                            }
+                        }
+                        newNum = missing !== null ? missing : existingNums[existingNums.length-1] + 1;
+                    }
+                    COLUMN_ORDER.forEach(c => {
+                        mappings.value.push({ row_num: newNum, region: c.region, col_key: c.colKey, item_name: '' });
+                    });
+                    saveToStorage();
+                    showToast(`已新增编号 ${newNum}`);
+                }
+
+                function clearAllMappings() {
+                    if (confirm('确定清空整个对照表吗？此操作不可撤销。')) {
+                        mappings.value = [];
+                        saveToStorage();
+                        showToast('对照表已清空');
+                    }
+                }
+
+                function startEdit(rowNum, region, colKey) {
+                    const val = getCellValue(rowNum, region, colKey);
+                    editingCell.value = { row: rowNum, region, colKey, value: val };
+                    nextTick(() => { if (editInputRef) editInputRef.focus(); });
+                }
+                function saveEdit(rowNum, region, colKey) {
+                    if (!editingCell.value) return;
+                    updateCell(rowNum, region, colKey, editingCell.value.value.trim());
+                    editingCell.value = null;
+                }
+                function cancelEdit() { editingCell.value = null; }
+
+                const itemIndex = computed(() => {
+                    const idx = new Map();
+                    mappings.value.forEach(m => {
+                        if (!m.item_name) return;
+                        const name = m.item_name.trim();
+                        if (!name) return;
+                        const key = name.toLowerCase();
+                        let regionStr = '';
+                        if (m.region === '大宗') {
+                            regionStr = `大宗${m.col_key}`;
+                        } else {
+                            regionStr = `${m.region}${m.col_key}`;
+                        }
+                        const number = `${m.row_num}`;
+                        if (!idx.has(key)) idx.set(key, new Set());
+                        idx.get(key).add(JSON.stringify({ region: regionStr, number }));
+                    });
+                    const result = new Map();
+                    for (let [k, v] of idx.entries()) {
+                        result.set(k, Array.from(v).map(s => JSON.parse(s)));
+                    }
+                    return result;
+                });
+
+                function performSearch() {
+                    const q = searchQuery.value.trim();
+                    if (!q) return;
+                    lastQuery.value = q;
+                    searchPerformed.value = true;
+                    const lowerQ = q.toLowerCase();
+                    const results = [];
+                    for (let [itemKey, posArray] of itemIndex.value.entries()) {
+                        if (itemKey.includes(lowerQ)) {
+                            results.push({ item_name: itemKey, positions: posArray });
+                        }
+                    }
+                    searchResults.value = results;
+                }
+                function clearSearch() {
+                    searchQuery.value = '';
+                    searchResults.value = [];
+                    searchPerformed.value = false;
+                }
+
+                const pasteInput = ref('');
+                const planLoading = ref(false);
+                const planData = ref([]);
+                const pasteExample = () => {
+                    pasteInput.value = `+----------+--------+---------+-----------+
+| 原理图'Unnamed'材料列表（1/1区域）                 |
++----------+--------+---------+-----------+
+| Item     |  Total | Missing | Available |
++----------+--------+---------+-----------+
+| 玻璃       | 227136 |  227136 |         1 |
+| 雪块       | 139615 |  139615 |         1 |
+| 棕色混凝土    |      1 |       1 |         0 |
+| 金合欢木板    |      1 |       1 |         0 |
++----------+--------+---------+-----------+
+| Item     |  Total | Missing | Available |
++----------+--------+---------+-----------+`;
+                };
+                const clearPlan = () => { pasteInput.value = ''; planData.value = []; };
+                function formatBoxes(amount) {
+                    const perBox = 27 * 64;
+                    const boxes = Math.floor(amount / perBox);
+                    const rem = amount % perBox;
+                    const groups = Math.floor(rem / 64);
+                    const pieces = rem % 64;
+                    let str = '';
+                    if (boxes) str += `${boxes}盒`;
+                    if (groups) str += `${groups}组`;
+                    if (pieces || str === '') str += `${pieces}个`;
+                    return str;
+                }
+                function generatePlan() {
+                    const text = pasteInput.value.trim();
+                    if (!text) { showToast('请粘贴内容'); return; }
+                    planLoading.value = true;
+                    try {
+                        const lines = text.split('\n');
+                        const items = [];
+                        for (let line of lines) {
+                            line = line.trim();
+                            if (!line.startsWith('|')) continue;
+                            const parts = line.split('|').map(s => s.trim()).filter(s => s);
+                            if (parts.length < 3) continue;
+                            if (parts[0].toLowerCase() === 'item') continue;
+                            const itemName = parts[0];
+                            const missing = parseInt(parts[2], 10);
+                            if (!isNaN(missing) && missing > 0) items.push({ item: itemName, missing });
+                        }
+                        const result = items.map(it => {
+                            const key = it.item.toLowerCase();
+                            const positions = itemIndex.value.get(key) || [];
+                            const numbers = positions.map(p => p.number).join('；') || '—';
+                            const regions = positions.map(p => p.region).join('；') || '未在对照表中找到';
+                            return {
+                                item: it.item,
+                                missing: it.missing,
+                                boxed: formatBoxes(it.missing),
+                                numbers,
+                                regions
+                            };
+                        });
+                        planData.value = result;
+                        showToast(`解析成功，${result.length} 种物品`);
+                    } catch(e) { showToast('解析失败'); }
+                    finally { planLoading.value = false; }
+                }
+                function calcStrWidth(str) { let w=0; for(let ch of str) w+=(ch.charCodeAt(0)>255)?2:1; return w; }
+                function downloadPlanExcel() {
+                    if (!planData.value.length) return;
+                    const headers = ['物品名称', '数量(盒组个)', '数量(个)', '编号', '位置'];
+                    const rows = planData.value.map(r => [r.item, r.boxed, r.missing, r.numbers, r.regions]);
+                    const sheetData = [headers, ...rows];
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                    ws['!autofilter'] = { ref: `A1:E${sheetData.length}` };
+                    const colWidths = [0,0,0,0,0];
+                    sheetData.forEach(row => row.forEach((c,i)=> { const w=calcStrWidth(String(c)); if(w>colWidths[i]) colWidths[i]=w; }));
+                    ws['!cols'] = colWidths.map(w => ({ wch: Math.min(50, Math.max(10, Math.ceil(w*1.2))) }));
+                    
+                    for (let R=0; R<sheetData.length; R++) {
+                        for (let C=0; C<5; C++) {
+                            const addr = XLSX.utils.encode_cell({r:R, c:C});
+                            const cellValue = sheetData[R][C];
+                            let cellType = 's';
+                            let numValue = null;
+                            
+                            if (C === 2 && R > 0) {
+                                const num = Number(cellValue);
+                                if (!isNaN(num)) {
+                                    cellType = 'n';
+                                    numValue = num;
+                                }
+                            }
+                            if (C === 3 && R > 0) {
+                                const str = String(cellValue);
+                                if (/^\d+$/.test(str)) {
+                                    const num = Number(str);
+                                    if (!isNaN(num)) {
+                                        cellType = 'n';
+                                        numValue = num;
+                                    }
+                                }
+                            }
+                            
+                            if (!ws[addr]) {
+                                if (cellType === 'n') {
+                                    ws[addr] = { t: 'n', v: numValue };
+                                } else {
+                                    ws[addr] = { t: 's', v: cellValue };
+                                }
+                            } else {
+                                if (cellType === 'n') {
+                                    ws[addr].t = 'n';
+                                    ws[addr].v = numValue;
+                                }
+                            }
+                            
+                            ws[addr].s = {
+                                alignment: { horizontal:'center', vertical:'center' },
+                                border: { top:{style:'thin'}, bottom:{style:'thin'}, left:{style:'thin'}, right:{style:'thin'} },
+                                font: { name:'微软雅黑', sz:11 }
+                            };
+                            if (R===0) {
+                                ws[addr].s.font = { bold:true, color:{rgb:'FFFFFF'}, name:'微软雅黑', sz:11 };
+                                ws[addr].s.fill = { fgColor:{rgb:'334155'} };
+                            }
+                        }
+                    }
+                    
+                    XLSX.utils.book_append_sheet(wb, ws, '材料清单');
+                    XLSX.writeFile(wb, '材料清单_输出.xlsx');
+                    showToast('Excel已生成 (编号为数字格式)');
+                }
+
+                function triggerImport() { fileInput.value.click(); }
+                
+                function processExcelFile(file) {
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const wb = XLSX.read(e.target.result, {type:'array'});
+                            const ws = wb.Sheets[wb.SheetNames[0]];
+                            const rows = XLSX.utils.sheet_to_json(ws, { header:1 });
+                            if(rows.length<3) { showToast('至少两行表头+数据'); return; }
+                            const newMappings = [];
+                            for(let i=2; i<rows.length; i++) {
+                                const row = rows[i]; if(!row || row.length===0) continue;
+                                const rowNum = row[0]; if(rowNum===undefined) continue;
+                                for(let colIdx=0; colIdx<COLUMN_ORDER.length; colIdx++) {
+                                    const col = COLUMN_ORDER[colIdx];
+                                    const val = row[colIdx+1] ? String(row[colIdx+1]).trim() : '';
+                                    newMappings.push({ row_num: Number(rowNum), region: col.region, col_key: col.colKey, item_name: val });
+                                }
+                            }
+                            if(newMappings.length===0) { showToast('未解析到数据'); return; }
+                            mappings.value = newMappings; saveToStorage();
+                            showToast(`导入 ${newMappings.length} 条`);
+                        } catch(err) { showToast('导入失败'); }
+                        finally {
+                            if (fileInput.value) fileInput.value.value = '';
+                        }
+                    };
+                    reader.readAsArrayBuffer(file);
+                }
+
+                function handleImportExcel(event) {
+                    const file = event.target.files[0];
+                    processExcelFile(file);
+                }
+
+                function handleDragOver(e) { isDragOver.value = true; }
+                function handleDragLeave(e) { isDragOver.value = false; }
+                function handleDrop(e) {
+                    isDragOver.value = false;
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        const file = files[0];
+                        const name = file.name.toLowerCase();
+                        if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+                            processExcelFile(file);
+                        } else {
+                            showToast('请拖拽Excel文件 (.xlsx, .xls)');
+                        }
+                    }
+                }
+
+                function exportMappingsExcel() {
+                    const header1 = ['编号'], header2 = [''];
+                    COLUMN_ORDER.forEach(c => { header1.push(c.region); header2.push(c.colKey); });
+                    const rows = [header1, header2];
+                    const rowMap = new Map();
+                    mappings.value.forEach(m => { if(!rowMap.has(m.row_num)) rowMap.set(m.row_num, {}); rowMap.get(m.row_num)[`${m.region}|${m.col_key}`] = m.item_name; });
+                    Array.from(rowMap.keys()).sort((a,b)=>a-b).forEach(num => {
+                        const row = [num], cells = rowMap.get(num);
+                        COLUMN_ORDER.forEach(col => row.push(cells[`${col.region}|${col.colKey}`] || ''));
+                        rows.push(row);
+                    });
+                    const wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet(rows);
+                    XLSX.utils.book_append_sheet(wb, ws, '全物品对照表');
+                    XLSX.writeFile(wb, '全物品对照表_导出.xlsx');
+                    showToast('导出成功');
+                }
+
+                function openReferenceSite() {
+                    window.open('https://docs.qq.com/sheet/DZnRxS2F4ZVd4YUpq?tab=000001', '_blank');
+                }
+
+                onMounted(() => {
+                    initDarkMode();           // 深色模式初始化
+                    loadMappingsFromStorage();
+                });
+
+                return {
+                    toast, darkMode, toggleDarkMode,
+                    searchQuery, searchResults, searchPerformed, lastQuery, performSearch, clearSearch,
+                    mappings, loading, groupedMappings, columnOrder: COLUMN_ORDER,
+                    editingCell, setEditRef, startEdit, saveEdit, cancelEdit,
+                    getCellValue, deleteRow, addNewRow, clearAllMappings,
+                    pasteInput, planLoading, planData, pasteExample, clearPlan, generatePlan, downloadPlanExcel,
+                    fileInput, triggerImport, handleImportExcel, exportMappingsExcel,
+                    isDragOver, handleDragOver, handleDragLeave, handleDrop,
+                    openReferenceSite
+                };
+            }
+        });
+
+        app.mount('#app');
+    </script>
+</body>
+</html>
